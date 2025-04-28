@@ -1,16 +1,16 @@
-import { PrismaClient } from '@prisma/client'
-import axios from 'axios'
-import dotenv from 'dotenv'
+import { PrismaClient } from '@prisma/client';
+import axios from 'axios';
+import dotenv from 'dotenv';
 
-dotenv.config()
+dotenv.config();
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 async function getGameDetails(appid: number) {
-    const url = `https://store.steampowered.com/api/appdetails?appids=${appid}`
-    const { data } = await axios.get<SteamAppDetailsResponse>(url)
-    const details = data[appid.toString()]
-    return details.success ? details.data : null
+    const url = `https://store.steampowered.com/api/appdetails?appids=${appid}`;
+    const { data } = await axios.get<SteamAppDetailsResponse>(url);
+    const details = data[appid.toString()];
+    return details.success ? details.data : null;
 }
 
 async function updateGameDetails(appid: number, details: SteamAppData) {
@@ -30,49 +30,67 @@ async function updateGameDetails(appid: number, details: SteamAppData) {
             metacriticScore: details.metacritic?.score || undefined,
             isFree: details.is_free,
             releaseDate: details.release_date?.date || undefined,
-        }
-    })
+        },
+    });
 }
 
 function formatPlatforms(platforms: { windows: boolean; mac: boolean; linux: boolean }): string {
     return [
         platforms.windows && 'Windows',
         platforms.mac && 'Mac',
-        platforms.linux && 'Linux'
-    ].filter(Boolean).join(', ')
+        platforms.linux && 'Linux',
+    ].filter(Boolean).join(', ');
 }
 
 async function initGameDetails() {
-    const games = await prisma.game.findMany({ where: { type: 'unknown' } })
-    console.log(`Found ${games.length} games to initialize.`)
+    const batchSize = 200;
+    let skip = 0;
+    let processed = 0;
 
-    for (const game of games) {
-        try {
-            // steam API allows ~200 requests every 5 minutes
-            await wait(1600)
-            const details = await getGameDetails(game.appid)
+    while (true) {
+        const games = await prisma.game.findMany({
+            where: { type: 'unknown' },
+            skip,
+            take: batchSize,
+        });
 
-            if (!details) {
-                console.log(`Skipping (no details): [${game.appid}] ${game.name}`)
-                continue
-            }
-
-            await updateGameDetails(game.appid, details)
-            console.log(`Initialized: [${game.appid}] ${game.name}`)
-
-        } catch (error) {
-            console.warn(`Failed on [${game.appid}] ${game.name}:`, error)
+        if (games.length === 0) {
+            console.log('Done processing all games.');
+            break;
         }
+
+        console.log(`Processing batch: ${processed} - ${processed + games.length}`);
+
+        for (const game of games) {
+            try {
+                // steam API allows ~200 requests every 5 minutes
+                await wait(1600);
+                const details = await getGameDetails(game.appid);
+
+                if (!details) {
+                    console.log(`Skipping (no details): [${game.appid}] ${game.name}`);
+                    continue;
+                }
+
+                await updateGameDetails(game.appid, details);
+                console.log(`Initialized: [${game.appid}] ${game.name}`);
+            } catch (error) {
+                console.warn(`Failed on [${game.appid}] ${game.name}:`, error);
+            }
+        }
+
+        skip += batchSize;
+        processed += games.length;
     }
 
-    await prisma.$disconnect()
+    await prisma.$disconnect();
 }
 
 function wait(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-initGameDetails()
+initGameDetails();
 
 // --- Types ---
 interface SteamAppDetailsResponse {
@@ -128,5 +146,3 @@ interface Genre {
     id: string;
     description: string;
 }
-
-
