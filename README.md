@@ -19,6 +19,7 @@ A Node.js + TypeScript project for fetching and building a full local Steam game
 ```bash
 npm install
 npx prisma generate
+npx prisma migrate deploy 
 npx ts-node src/fetchAppList.ts   # Fetch AppIDs
 npx ts-node src/fetchGameDetails.ts  # Fetch full game details
 ```
