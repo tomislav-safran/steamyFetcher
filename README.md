@@ -21,6 +21,7 @@ npm install
 npx prisma generate
 npx ts-node src/fetchAppList.ts   # Fetch AppIDs
 npx ts-node src/fetchGameDetails.ts  # Fetch full game details
+```
 
 ## Notes
  - fetching app data for all apps will take a while since the steam API alows fetching details for only 1 record at a time, with a limit of ~200 requests every 5 minutes
