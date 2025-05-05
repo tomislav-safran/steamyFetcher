@@ -69,6 +69,7 @@ async function initGameDetails() {
 
                 if (!details) {
                     console.log(`Skipping (no details): [${game.appid}] ${game.name}`);
+                    await updateGameDetails(game.appid, getEmptyGameDetails())
                     continue;
                 }
 
@@ -84,6 +85,20 @@ async function initGameDetails() {
     }
 
     await prisma.$disconnect();
+}
+
+function getEmptyGameDetails() {
+    return {
+        about_the_game: "",
+        categories: [],
+        detailed_description: "",
+        genres: [],
+        is_free: false,
+        name: "",
+        platforms: {linux: false, mac: false, windows: false},
+        release_date: {coming_soon: false, date: ""},
+        short_description: "",
+        type: 'noDetails'}
 }
 
 function wait(ms: number) {
