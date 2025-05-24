@@ -23,6 +23,8 @@ model Game {
   price           String?
   metacriticScore Int?
   isFree          Boolean
+  reviewCount     Int?
+  reviewScore     Int?
   releaseDate     String?
   createdAt       DateTime @default(now())
 }
