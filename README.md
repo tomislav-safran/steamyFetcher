@@ -22,6 +22,7 @@ npx prisma generate
 npx prisma migrate deploy 
 npx ts-node src/fetchAppList.ts   # Fetch AppIDs
 npx ts-node src/fetchGameDetails.ts  # Fetch full game details
+npx ts-node src/fetchReviews.ts # Fetch game reviews
 ```
 
 ## Notes
